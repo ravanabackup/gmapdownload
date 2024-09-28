@@ -22,39 +22,53 @@
 <div class="container">
     <h2 class="mb-4">Google Map Image Downloader</h2>
     <div class="mb-3">
-        <label for="inputText" class="form-label">Enter all data from "View Page Source" / Ctrl + U </label>
+        <label for="inputText" class="form-label">Enter all data from "View Page Source" / Ctrl + U</label>
         <textarea class="form-control" id="inputText" rows="1" placeholder="Paste your data here"></textarea>
     </div>
     <button class="btn btn-primary mb-3" onclick="extractAndDecodeURLs()">Extract and Decode URLs</button>
     <div class="mb-3">
         <label for="outputURLs" class="form-label">Decoded URLs</label>
-        <textarea class="form-control" id="outputURLs" rows="1" readonly></textarea>
+        <textarea class="form-control" id="outputURLs" rows="6" readonly></textarea>
     </div>
 </div>
 
 <script>
     function extractAndDecodeURLs() {
         let inputText = document.getElementById("inputText").value;
-        
-        // Regular expression to match URLs with the pattern https:%2F%2F (similar to encoded URLs)
-        let urlPattern = /https?:%2F%2F[\w.%\-_\/]+/g;
-        
+
+        // Regular expression to match both Googleusercontent and Ggpht URLs
+        let urlPattern = /(?:https?:%2F%2F|https?:\/\/|\/\/)lh[35]\.(googleusercontent|ggpht)\.com\/p\/[\w.%\-_\/]+/g;
+
         // Find all matching URLs in the text
         let matchedURLs = inputText.match(urlPattern);
 
         if (matchedURLs) {
-            let decodedURLs = matchedURLs.map(encodedURL => {
-                // Decode the URL twice to handle double encoding
+            // Use a Set to store unique URLs
+            let uniqueURLs = new Set();
+
+            matchedURLs.forEach(encodedURL => {
+                // If the URL is encoded, decode it twice
                 let firstDecode = decodeURIComponent(encodedURL);
                 let secondDecode = decodeURIComponent(firstDecode);
-                
-                // Remove any existing dimensions (like =w203-h146-k-no) and add =w5000
-                let cleanURL = secondDecode.replace(/=[\w\d\-]+$/, ''); // Removes any query parameters after '='
-                return cleanURL + '=w5000';
+
+                // Ensure the URL starts with 'https://', add it if missing
+                if (!secondDecode.startsWith('https://')) {
+                    secondDecode = 'https:' + secondDecode;
+                }
+
+                // Remove any query parameters that start with '=' (e.g., =w900-h600-k-no-pi8...)
+                let cleanURL = secondDecode.replace(/=[\w\d\-.\~]+$/, '');
+
+                // Check if it's a 360 image (ggpht.com) or a regular image (googleusercontent.com)
+                if (cleanURL.includes('ggpht.com')) {
+                    uniqueURLs.add(cleanURL + '=w10000');  // 360 images get =w10000
+                } else {
+                    uniqueURLs.add(cleanURL + '=w5000');  // Regular images get =w5000
+                }
             });
 
-            // Display the decoded URLs
-            document.getElementById("outputURLs").value = decodedURLs.join('\n');
+            // Convert the Set back to an array and join it with newlines for display
+            document.getElementById("outputURLs").value = Array.from(uniqueURLs).join('\n');
         } else {
             document.getElementById("outputURLs").value = "No matching URLs found.";
         }
