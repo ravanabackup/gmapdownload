@@ -6,14 +6,57 @@
     <title>Google Map Image Downloader</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        /* Dark mode background and text colors */
         body {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
             padding: 20px;
         }
         .container {
             max-width: 800px;
+            background-color: #2b2b2b;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
         }
-        textarea {
-            resize: vertical;
+        h2 {
+            color: #f0f0f0;
+        }
+        label {
+            color: #f0f0f0;
+        }
+        textarea, .form-control, .btn-primary {
+            background-color: #3b3b3b;
+            color: #f0f0f0;
+            border: 1px solid #555555;
+        }
+        textarea::placeholder {
+            color: #888888;
+        }
+        .btn-primary {
+            background-color: #1f6feb;
+            border-color: #1f6feb;
+        }
+        .btn-primary:hover {
+            background-color: #145bb0;
+            border-color: #145bb0;
+        }
+        /* Thumbnail styling */
+        .thumbnail-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .thumbnail {
+            cursor: pointer;
+            border: 2px solid #444;
+            border-radius: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .thumbnail:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2);
         }
     </style>
 </head>
@@ -30,6 +73,7 @@
         <label for="outputURLs" class="form-label">Decoded URLs</label>
         <textarea class="form-control" id="outputURLs" rows="6" readonly></textarea>
     </div>
+    <div class="thumbnail-container" id="thumbnails"></div>
 </div>
 
 <script>
@@ -59,7 +103,7 @@
                 // Remove any query parameters that start with '=' (e.g., =w900-h600-k-no-pi8...)
                 let cleanURL = secondDecode.replace(/=[\w\d\-.\~]+$/, '');
 
-                // Check if it's a 360 image (ggpht.com) or a regular image (googleusercontent.com)
+                // Add clarity modifier: thumbnails get =w250, full-size =w5000
                 if (cleanURL.includes('ggpht.com')) {
                     uniqueURLs.add(cleanURL + '=w10000');  // 360 images get =w10000
                 } else {
@@ -69,9 +113,34 @@
 
             // Convert the Set back to an array and join it with newlines for display
             document.getElementById("outputURLs").value = Array.from(uniqueURLs).join('\n');
+
+            // Display thumbnails with low clarity (w250)
+            displayThumbnails(Array.from(uniqueURLs));
         } else {
             document.getElementById("outputURLs").value = "No matching URLs found.";
         }
+    }
+
+    function displayThumbnails(urls) {
+        let thumbnailsContainer = document.getElementById("thumbnails");
+        thumbnailsContainer.innerHTML = "";
+
+        urls.forEach(url => {
+            // Replace w5000 or w10000 with w250 for low clarity thumbnails
+            let thumbnailUrl = url.replace(/=w\d+$/, '=w250');
+
+            let img = document.createElement("img");
+            img.src = thumbnailUrl;
+            img.classList.add("thumbnail");
+            img.style.maxWidth = "150px";
+            img.style.maxHeight = "150px";
+            img.style.objectFit = "cover";
+            img.style.marginBottom = "10px";
+            img.onclick = function() {
+                window.open(url, "_blank");  // Open full image in new tab
+            };
+            thumbnailsContainer.appendChild(img);
+        });
     }
 </script>
 
